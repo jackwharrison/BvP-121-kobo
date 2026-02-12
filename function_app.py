@@ -281,17 +281,10 @@ def post_with_split(session, payloads):
     time.sleep(SLEEP_BETWEEN_CALLS)
     ok2, bad2 = post_with_split(session, payloads[mid:])
     return ok1 + ok2, bad1 + bad2
-
-
 # =========================================================
-# TIMER ENTRYPOINT
+# RUNNER (shared by timer + manual HTTP trigger)
 # =========================================================
-@app.timer_trigger(
-    schedule="0 0 * * * *",  # daily 02:00 UTC
-    arg_name="timer",
-    run_on_startup=False,
-)
-def daily_sync(timer: func.TimerRequest):
+def run_sync():
     logging.info("=== Kobo → 121 daily sync start ===")
 
     state = load_state()
@@ -364,3 +357,28 @@ def daily_sync(timer: func.TimerRequest):
         f"success={len(successes)} failed={len(failures)}"
     )
     logging.info("=== Kobo → 121 daily sync end ===")
+
+
+# =========================================================
+# TIMER ENTRYPOINT
+# =========================================================
+@app.timer_trigger(
+    schedule="0 0 * * * *",  # daily 02:00 UTC
+    arg_name="timer",
+    run_on_startup=True,
+)
+
+def daily_sync(timer: func.TimerRequest):
+    run_sync()
+
+# =========================================================
+# MANUAL TRIGGER (temporary)
+# =========================================================
+@app.route(route="run-now", methods=["GET"], auth_level=func.AuthLevel.FUNCTION)
+def run_now(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        run_sync()
+        return func.HttpResponse("OK – sync triggered", status_code=200)
+    except Exception as e:
+        logging.exception("Manual trigger failed")
+        return func.HttpResponse(f"FAILED: {e}", status_code=500)
