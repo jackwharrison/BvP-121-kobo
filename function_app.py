@@ -26,7 +26,7 @@ KOBO_BASE = os.getenv("KOBO_BASE")
 KOBO_TOKEN = os.getenv("KOBO_TOKEN")
 KOBO_ASSET_ID = os.getenv("KOBO_ASSET_ID")
 
-LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "60"))
+LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "1"))
 POST_BATCH_SIZE = int(os.getenv("POST_BATCH_SIZE", "25"))
 SLEEP_BETWEEN_CALLS = float(os.getenv("SLEEP_BETWEEN_CALLS", "0.2"))
 
@@ -287,7 +287,7 @@ def post_with_split(session, payloads):
 # TIMER ENTRYPOINT
 # =========================================================
 @app.timer_trigger(
-    schedule="0 0 2 * * *",  # daily 02:00 UTC
+    schedule="0 0 * * * *",  # daily 02:00 UTC
     arg_name="timer",
     run_on_startup=False,
 )
